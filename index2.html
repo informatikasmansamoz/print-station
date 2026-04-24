@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Cetak Printer Kertas - Proyek Printer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .printer-app {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #f5f5f5;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            color: white;
+            padding: 25px 30px;
+            border-bottom: 4px solid #e74c3c;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .printer-status {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .toolbar {
+            background: white;
+            padding: 15px 25px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-print { background: #e74c3c; color: white; }
+        .btn-print:hover { background: #c0392b; transform: translateY(-2px); }
+        .btn-preview { background: #3498db; color: white; }
+        .btn-preview:hover { background: #2980b9; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover { background: #229954; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-warning:hover { background: #e67e22; }
+        .btn-dark { background: #34495e; color: white; }
+        .btn-dark:hover { background: #2c3e50; }
+
+        .settings-panel {
+            background: #ecf0f1;
+            padding: 15px 25px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-group label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #2c3e50;
+        }
+
+        select, input {
+            padding: 6px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: 550px;
+        }
+
+        @media (max-width: 800px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+
+        .editor-panel {
+            background: #fff;
+            border-right: 1px solid #ddd;
+        }
+
+        .panel-header {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            font-weight: 600;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        textarea {
+            width: 100%;
+            height: 480px;
+            padding: 20px;
+            font-family: 'Courier New', 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            border: none;
+            resize: vertical;
+            outline: none;
+            background: #fafbfc;
+        }
+
+        .preview-panel {
+            background: #f0f0f0;
+        }
+
+        .preview-area {
+            padding: 25px;
+            background: white;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 400px;
+            max-height: 450px;
+            overflow: auto;
+        }
+
+        .print-content {
+            font-family: 'Courier New', 'Fira Code', monospace;
+            font-size: 11pt;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .queue-panel {
+            background: white;
+            border-top: 1px solid #ddd;
+            padding: 15px 25px;
+        }
+
+        .queue-header {
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .queue-list {
+            max-height: 150px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .queue-item {
+            background: white;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 3px solid #e74c3c;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 25px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #e74c3c;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="printer-app">
+    <div class="header">
+        <h1><span>🖨️</span> SISTEM CETAK PRINTER KERTAS</h1>
+        <p>Proyek Printer - Solusi Cetak Dokumen, Kode, Struk, dan Laporan ke Printer Fisik</p>
+        <div class="printer-status">✅ Sistem siap | Pilih printer di dialog cetak</div>
+    </div>
+
+    <div class="toolbar no-print">
+        <button class="btn btn-print" id="printNowBtn">🖨️ CETAK KE PRINTER SEKARANG</button>
+        <button class="btn btn-preview" id="previewBtn">👁️ PREVIEW CETAKAN</button>
+        <button class="btn btn-success" id="addToQueueBtn">📥 TAMBAH KE ANTRIAN</button>
+        <button class="btn btn-warning" id="printQueueBtn">📋 CETAK ANTRIAN</button>
+        <button class="btn btn-dark" id="clearQueueBtn">🗑️ HAPUS ANTRIAN</button>
+        <button class="btn btn-dark" id="newDocBtn">📄 DOKUMEN BARU</button>
+        <button class="btn btn-dark" id="sampleBtn">📝 CONTOH DOKUMEN</button>
+    </div>
+
+    <div class="settings-panel no-print">
+        <div class="setting-group">
+            <label>📄 Ukuran Kertas:</label>
+            <select id="paperSize">
+                <option value="A4">A4 (210 x 297 mm)</option>
+                <option value="Letter">Letter (216 x 279 mm)</option>
+                <option value="Legal">Legal (216 x 356 mm)</option>
+                <option value="Struk">Struk (80mm x 297mm)</option>
+            </select>
+        </div>
+        <div class="setting-group">
+            <label>📐 Orientasi:</label>
+            <select id="orientation">
+                <option value="portrait">Portrait (Berdiri)</option>
+                <option value="landscape">Landscape (Tidur)</option>
+            </select>
+        </div>
+        <div class="setting-group">
+            <label>📏 Margin (mm):</label>
+            <input type="number" id="margin" value="15" min="0" max="50" step="5" style="width: 70px;">
+        </div>
+        <div class="setting-group">
+            <label>🔤 Ukuran Font:</label>
+            <select id="fontSize">
+                <option value="9">9pt</option>
+                <option value="10">10pt</option>
+                <option value="11" selected>11pt</option>
+                <option value="12">12pt</option>
+                <option value="14">14pt</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="editor-panel">
+            <div class="panel-header">
+                <span>✏️ EDITOR DOKUMEN</span>
+                <span style="font-size: 12px; color: #7f8c8d;">Teks, kode, atau laporan</span>
+            </div>
+            <textarea id="documentEditor" placeholder="Tulis dokumen yang akan dicetak di sini..."></textarea>
+        </div>
+
+        <div class="preview-panel">
+            <div class="panel-header">
+                <span>📄 PREVIEW CETAKAN</span>
+                <span style="font-size: 12px; color: #7f8c8d;">Hasil yang akan tercetak</span>
+            </div>
+            <div class="preview-area">
+                <div id="livePreview" class="print-content">
+                    <code>// Preview akan tampil di sini</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="queue-panel no-print">
+        <div class="queue-header">
+            <span>📋 ANTRIAN CETAK (<span id="queueCount">0</span> dokumen)</span>
+            <button id="clearQueueBtn2" style="padding: 4px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">Hapus Semua</button>
+        </div>
+        <div class="queue-list" id="queueList">
+            <div style="text-align: center; color: #95a5a6; padding: 20px;">Belum ada antrian</div>
+        </div>
+    </div>
+
+    <div class="footer no-print">
+        <p>⚡ Sistem siap mencetak ke printer fisik | Klik "CETAK KE PRINTER SEKARANG" → Pilih printer → Atur jumlah kopi → Print</p>
+        <p style="margin-top: 5px; font-size: 11px;">💡 Jika popup diblokir, izinkan popup untuk situs ini atau gunakan tombol Preview lalu Ctrl+P</p>
+    </div>
+</div>
+
+<div id="printModal" class="modal">
+    <div class="modal-content">
+        <h3>🖨️ Mempersiapkan cetakan...</h3>
+        <div class="spinner"></div>
+        <p>Dialog printer akan terbuka sebentar lagi</p>
+        <p style="font-size: 12px; margin-top: 10px;">Jika tidak muncul, cek popup blocker</p>
+    </div>
+</div>
+
+<script>
+    let printQueue = [];
+    let printJobId = 0;
+
+    const editor = document.getElementById('documentEditor');
+    const previewDiv = document.getElementById('livePreview');
+    const printNowBtn = document.getElementById('printNowBtn');
+    const previewBtn = document.getElementById('previewBtn');
+    const addToQueueBtn = document.getElementById('addToQueueBtn');
+    const printQueueBtn = document.getElementById('printQueueBtn');
+    const clearQueueBtn = document.getElementById('clearQueueBtn');
+    const clearQueueBtn2 = document.getElementById('clearQueueBtn2');
+    const newDocBtn = document.getElementById('newDocBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const queueList = document.getElementById('queueList');
+    const queueCountSpan = document.getElementById('queueCount');
+    const paperSize = document.getElementById('paperSize');
+    const orientation = document.getElementById('orientation');
+    const margin = document.getElementById('margin');
+    const fontSize = document.getElementById('fontSize');
+    const printModal = document.getElementById('printModal');
+
+    function showNotification(msg, isError = false) {
+        let notif = document.createElement('div');
+        notif.className = 'notification';
+        notif.style.background = isError ? '#e74c3c' : '#2ecc71';
+        notif.innerHTML = msg;
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 3000);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function updatePreview() {
+        let content = editor.value;
+        if (content.trim() === "") {
+            previewDiv.innerHTML = "<code>// Kosong - tulis dokumen di editor kiri</code>";
+            return;
+        }
+        let escapedContent = escapeHtml(content);
+        let fontSizeVal = fontSize.value;
+        previewDiv.innerHTML = `<pre style="font-family: 'Courier New', monospace; font-size: ${fontSizeVal}pt; margin: 0; white-space: pre-wrap;">${escapedContent}</pre>`;
+    }
+
+    function generatePrintHTML(content, title = "Dokumen Cetak") {
+        let currentDateTime = new Date().toLocaleString('id-ID');
+        let escapedContent = escapeHtml(content);
+        let marginVal = margin.value + "mm";
+        let fontSizeVal = fontSize.value + "pt";
+        let orientationVal = orientation.value;
+        let paperSizeVal = paperSize.value;
+        
+        let sizeCSS = "";
+        if (paperSizeVal === "A4") sizeCSS = "size: A4;";
+        else if (paperSizeVal === "Letter") sizeCSS = "size: Letter;";
+        else if (paperSizeVal === "Legal") sizeCSS = "size: Legal;";
+        else if (paperSizeVal === "Struk") sizeCSS = "size: 80mm 297mm;";
+        
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>${title} - Cetak Printer</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body {
+                        font-family: 'Courier New', 'Consolas', monospace;
+                        margin: ${marginVal};
+                        padding: 0;
+                        background: white;
+                        font-size: ${fontSizeVal};
+                        line-height: 1.5;
+                    }
+                    @page {
+                        ${sizeCSS}
+                        margin: ${marginVal};
+                    }
+                    .print-header {
+                        text-align: center;
+                        margin-bottom: 20px;
+                        padding-bottom: 10px;
+                        border-bottom: 2px solid #000;
+                        font-family: Arial, sans-serif;
+                    }
+                    .print-header h2 { font-size: 18pt; margin-bottom: 5px; }
+                    .print-header .date { font-size: 10pt; color: #555; }
+                    .content {
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                        font-family: 'Courier New', monospace;
+                        font-size: ${fontSizeVal};
+                        line-height: 1.5;
+                    }
+                    .print-footer {
+                        text-align: center;
+                        margin-top: 30px;
+                        padding-top: 10px;
+                        border-top: 1px solid #ccc;
+                        font-size: 9pt;
+                        color: #777;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-header">
+                    <h2>${escapeHtml(title)}</h2>
+                    <div class="date">Dicetak: ${currentDateTime} | ${paperSizeVal} | ${orientationVal === 'portrait' ? 'Portrait' : 'Landscape'}</div>
+                </div>
+                <div class="content">
+                    <pre style="font-family: 'Courier New', monospace; margin: 0; white-space: pre-wrap;">${escapedContent}</pre>
+                </div>
+                <div class="print-footer">
+                    Dicetak dari Sistem Cetak Printer Kertas
+                </div>
+                <script>
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.print();
+                            setTimeout(function() { window.close(); }, 1000);
+                        }, 500);
+                    };
+                <\/script>
+            </body>
+            </html>
+        `;
+    }
+
+    function printDirectly() {
+        let content = editor.value;
+        if (content.trim() === "") {
+            showNotification("⚠️ Tidak ada dokumen untuk dicetak!", true);
+            return false;
+        }
+        
+        showModal(true);
+        
+        setTimeout(() => {
+            let title = "Dokumen Cetak " + new Date().toLocaleTimeString();
+            let printHTML = generatePrintHTML(content, title);
+            
+            try {
+                const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,scrollbars=yes,menubar=yes');
+                if (!printWindow || printWindow.closed || typeof printWindow.closed === 'undefined') {
+                    showNotification("⚠️ Popup diblokir! Izinkan popup atau gunakan Preview + Ctrl+P", true);
+                    showModal(false);
+                    return;
+                }
+                
+                printWindow.document.write(printHTML);
+                printWindow.document.close();
+                printWindow.focus();
+                showModal(false);
+                showNotification("✅ Dialog cetak akan terbuka...");
+            } catch(e) {
+                showNotification("❌ Gagal membuka jendela cetak: " + e.message, true);
+                showModal(false);
+            }
+        }, 200);
+        
+        return true;
+    }
+
+    function previewPrint() {
+        let content = editor.value;
+        if (content.trim() === "") {
+            showNotification("⚠️ Tidak ada dokumen untuk preview!", true);
+            return;
+        }
+        
+        let title = "PREVIEW - " + new Date().toLocaleTimeString();
+        let printHTML = generatePrintHTML(content, title);
+        let modifiedHTML = printHTML.replace(/setTimeout\(function\(\) \{ window.print\(\);/, '// Preview mode');
+        modifiedHTML = modifiedHTML.replace(/setTimeout\(function\(\) \{ window.close\(\);/, '//');
+        
+        const previewWindow = window.open('', '_blank', 'width=900,height=700');
+        if (!previewWindow) {
+            showNotification("⚠️ Popup diblokir! Izinkan popup untuk preview", true);
+            return;
+        }
+        
+        previewWindow.document.write(modifiedHTML);
+        previewWindow.document.close();
+        
+        setTimeout(() => {
+            if (previewWindow.document.body) {
+                let info = previewWindow.document.createElement('div');
+                info.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#e74c3c; color:white; padding:10px 20px; border-radius:8px; font-family:sans-serif; z-index:9999; cursor:pointer;';
+                info.innerHTML = '🖨️ Tekan Ctrl+P untuk mencetak ke printer';
+                info.onclick = () => previewWindow.print();
+                previewWindow.document.body.appendChild(info);
+            }
+        }, 500);
+    }
+
+    function addToQueue() {
+        let content = editor.value;
+        if (content.trim() === "") {
+            showNotification("⚠️ Tidak ada dokumen untuk ditambahkan!", true);
+            return;
+        }
+        
+        printJobId++;
+        let newJob = {
+            id: printJobId,
+            content: content,
+            title: "Dokumen " + printJobId,
+            timestamp: new Date().toLocaleString()
+        };
+        
+        printQueue.push(newJob);
+        updateQueueDisplay();
+        showNotification(`✅ Dokumen ditambahkan ke antrian! Total: ${printQueue.length}`);
+    }
+
+    function printAllQueue() {
+        if (printQueue.length === 0) {
+            showNotification("⚠️ Antrian kosong!", true);
+            return;
+        }
+        
+        if (confirm(`Cetak ${printQueue.length} dokumen ke printer?`)) {
+            let currentIndex = 0;
+            
+            function printNext() {
+                if (currentIndex >= printQueue.length) {
+                    showNotification("✅ Semua dokumen selesai dicetak!");
+                    return;
+                }
+                
+                let job = printQueue[currentIndex];
+                let printHTML = generatePrintHTML(job.content, `${job.title} (${currentIndex+1}/${printQueue.length})`);
+                
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                    printWindow.document.write(printHTML);
+                    printWindow.document.close();
+                    printWindow.focus();
+                    setTimeout(() => {
+                        printWindow.close();
+                        currentIndex++;
+                        printNext();
+                    }, 2000);
+                } else {
+                    showNotification("Popup diblokir! Cetak antrian terhenti.", true);
+                }
+            }
+            
+            printNext();
+        }
+    }
+
+    function clearQueue() {
+        if (printQueue.length === 0) return;
+        if (confirm(`Hapus ${printQueue.length} dokumen dari antrian?`)) {
+            printQueue = [];
+            updateQueueDisplay();
+            showNotification("✅ Antrian telah dikosongkan!");
+        }
+    }
+
+    function updateQueueDisplay() {
+        queueCountSpan.innerText = printQueue.length;
+        
+        if (printQueue.length === 0) {
+            queueList.innerHTML = '<div style="text-align: center; color: #95a5a6; padding: 20px;">📭 Belum ada antrian</div>';
+            return;
+        }
+        
+        queueList.innerHTML = "";
+        printQueue.forEach((job) => {
+            let div = document.createElement('div');
+            div.className = 'queue-item';
+            let previewText = job.content.substring(0, 50) + (job.content.length > 50 ? '...' : '');
+            div.innerHTML = `
+                <div>
+                    <strong>#${job.id}</strong> - ${escapeHtml(previewText)}
+                    <div style="font-size: 10px; color: #7f8c8d;">${job.timestamp}</div>
+                </div>
+                <button onclick="removeFromQueue(${job.id})" style="background:#e74c3c; color:white; border:none; padding:4px 12px; border-radius:5px; cursor:pointer;">Hapus</button>
+            `;
+            queueList.appendChild(div);
+        });
+    }
+
+    window.removeFromQueue = function(id) {
+        printQueue = printQueue.filter(job => job.id !== id);
+        updateQueueDisplay();
+        showNotification("✅ Dokumen dihapus dari antrian");
+    };
+
+    function newDocument() {
+        if (editor.value.trim() !== "" && confirm("Buat dokumen baru? Data saat ini akan hilang.")) {
+            editor.value = "";
+            updatePreview();
+        } else if (editor.value.trim() === "") {
+            editor.value = "";
+            updatePreview();
+        }
+    }
+
+    function insertSample() {
+        let sample = `================================
+   LAPORAN PROYEK PRINTER
+================================
+
+Tanggal: ${new Date().toLocaleDateString('id-ID')}
+Operator: Admin Printer Station
+
+--- DETAIL CETAKAN ---
+Jenis Dokumen: Laporan Bulanan
+Status: Berhasil
+
+--- DATA CETAK ---
+1. Dokumen Teknis: 2 eksemplar
+2. Kode Program: 1 eksemplar  
+3. Struk Transaksi: 5 eksemplar
+
+--- KESIMPULAN ---
+Sistem printer berjalan dengan baik.
+Semua dokumen tercetak dengan rapi.
+
+Terima kasih telah menggunakan
+Sistem Cetak Printer Kertas!
+================================`;
+        
+        editor.value = sample;
+        updatePreview();
+        showNotification("✅ Contoh dokumen telah ditambahkan!");
+    }
+
+    function showModal(show) {
+        printModal.style.display = show ? 'flex' : 'none';
+    }
+
+    editor.addEventListener('input', updatePreview);
+    printNowBtn.addEventListener('click', printDirectly);
+    previewBtn.addEventListener('click', previewPrint);
+    addToQueueBtn.addEventListener('click', addToQueue);
+    printQueueBtn.addEventListener('click', printAllQueue);
+    clearQueueBtn.addEventListener('click', clearQueue);
+    clearQueueBtn2.addEventListener('click', clearQueue);
+    newDocBtn.addEventListener('click', newDocument);
+    sampleBtn.addEventListener('click', insertSample);
+    
+    paperSize.addEventListener('change', updatePreview);
+    orientation.addEventListener('change', updatePreview);
+    margin.addEventListener('input', updatePreview);
+    fontSize.addEventListener('change', updatePreview);
+    
+    updatePreview();
+    
+    console.log("✅ Sistem Cetak Printer Kertas siap digunakan!");
+    showNotification("✅ Sistem siap! Mulai mengetik dokumen untuk dicetak.");
+</script>
+</body>
+</html>
