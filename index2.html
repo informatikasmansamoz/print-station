@@ -2,8 +2,12 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Cetak Printer Kertas - Proyek Printer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>PrinterMaster Pro - Upload & Cetak ke Printer</title>
+    <!-- PDF.js library untuk ekstraksi teks PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- Tesseract.js untuk OCR gambar (extract teks dari gambar) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,373 +16,248 @@
         }
 
         body {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
+            background: radial-gradient(circle at 10% 20%, #0b1120, #111827);
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            padding: 24px;
             min-height: 100vh;
         }
 
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+
         .printer-app {
-            max-width: 1400px;
+            max-width: 1500px;
             margin: 0 auto;
-            background: #f5f5f5;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: #f9fafb;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
             overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            background: linear-gradient(115deg, #0f172a 0%, #1e293b 100%);
             color: white;
-            padding: 25px 30px;
-            border-bottom: 4px solid #e74c3c;
+            padding: 26px 32px;
+            border-bottom: 3px solid #f97316;
         }
 
-        .header h1 {
-            font-size: 32px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
+        .header h1 { font-size: 28px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
         .printer-status {
-            background: rgba(255,255,255,0.1);
-            padding: 8px 15px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 10px;
+            background: rgba(255,255,255,0.12);
+ backdrop-filter: blur(4px);
+            padding: 6px 16px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
             font-size: 13px;
         }
 
         .toolbar {
             background: white;
-            padding: 15px 25px;
+            padding: 16px 28px;
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
-            border-bottom: 1px solid #ddd;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-bottom: 1px solid #e9eef3;
         }
 
         .btn {
             padding: 10px 20px;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: 0.2s ease;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
-
-        .btn-print { background: #e74c3c; color: white; }
-        .btn-print:hover { background: #c0392b; transform: translateY(-2px); }
-        .btn-preview { background: #3498db; color: white; }
-        .btn-preview:hover { background: #2980b9; }
-        .btn-success { background: #27ae60; color: white; }
-        .btn-success:hover { background: #229954; }
-        .btn-warning { background: #f39c12; color: white; }
-        .btn-warning:hover { background: #e67e22; }
-        .btn-dark { background: #34495e; color: white; }
-        .btn-dark:hover { background: #2c3e50; }
+        .btn-print { background: #ef4444; color: white; }
+        .btn-print:hover { background: #dc2626; transform: translateY(-2px); }
+        .btn-preview { background: #3b82f6; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-dark { background: #334155; color: white; }
+        .btn-dark:hover { background: #1e293b; }
+        .btn-upload { background: #8b5cf6; color: white; }
+        .btn-upload:hover { background: #7c3aed; }
 
         .settings-panel {
-            background: #ecf0f1;
-            padding: 15px 25px;
+            background: #f1f5f9;
+            padding: 14px 28px;
             display: flex;
-            gap: 20px;
+            gap: 24px;
             flex-wrap: wrap;
-            border-bottom: 1px solid #bdc3c7;
+            border-bottom: 1px solid #e2e8f0;
         }
-
         .setting-group {
             display: flex;
             align-items: center;
             gap: 10px;
+            background: white;
+            padding: 5px 12px;
+            border-radius: 40px;
         }
-
-        .setting-group label {
-            font-weight: 600;
-            font-size: 13px;
-            color: #2c3e50;
-        }
-
-        select, input {
-            padding: 6px 12px;
-            border: 1px solid #bdc3c7;
-            border-radius: 6px;
-            font-size: 13px;
-        }
+        .setting-group label { font-weight: 600; font-size: 12px; color: #0f172a; }
+        select, input { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 20px; padding: 6px 12px; font-size: 12px; }
 
         .main-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0;
-            min-height: 550px;
+            min-height: 560px;
         }
+        @media (max-width: 780px) { .main-content { grid-template-columns: 1fr; } }
 
-        @media (max-width: 800px) {
-            .main-content { grid-template-columns: 1fr; }
-        }
-
-        .editor-panel {
-            background: #fff;
-            border-right: 1px solid #ddd;
-        }
-
+        .editor-panel { background: #ffffff; border-right: 1px solid #eef2f6; }
         .panel-header {
-            background: #f8f9fa;
-            padding: 12px 20px;
-            font-weight: 600;
-            border-bottom: 1px solid #ddd;
+            background: #fefce8;
+            padding: 14px 24px;
+            font-weight: 700;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
         }
-
         textarea {
             width: 100%;
-            height: 480px;
-            padding: 20px;
-            font-family: 'Courier New', 'Fira Code', monospace;
+            height: 500px;
+            padding: 24px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
             font-size: 13px;
-            line-height: 1.6;
+            line-height: 1.55;
             border: none;
             resize: vertical;
             outline: none;
-            background: #fafbfc;
+            background: #fdfdfd;
         }
-
-        .preview-panel {
-            background: #f0f0f0;
-        }
-
+        .preview-panel { background: #f1f5f9; }
         .preview-area {
-            padding: 25px;
+            padding: 24px;
             background: white;
-            margin: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            min-height: 400px;
-            max-height: 450px;
+            margin: 24px;
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            min-height: 420px;
+            max-height: 460px;
             overflow: auto;
         }
+        .print-content { font-family: 'Courier New', monospace; font-size: 11pt; line-height: 1.5; white-space: pre-wrap; }
 
-        .print-content {
-            font-family: 'Courier New', 'Fira Code', monospace;
-            font-size: 11pt;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        .upload-area {
+            background: #fef3c7;
+            padding: 12px 28px;
+            border-bottom: 1px solid #fde68a;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
         }
+        .file-input-label {
+            background: #8b5cf6;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .upload-info { font-size: 12px; color: #78350f; background: #fffbeb; padding: 6px 14px; border-radius: 30px; }
 
         .queue-panel {
-            background: white;
-            border-top: 1px solid #ddd;
-            padding: 15px 25px;
+            background: #ffffff;
+            border-top: 2px solid #eef2f8;
+            padding: 18px 28px;
         }
-
-        .queue-header {
-            font-weight: 600;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .queue-list {
-            max-height: 150px;
-            overflow-y: auto;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 10px;
-        }
-
+        .queue-header { font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; }
+        .queue-list { max-height: 160px; overflow-y: auto; background: #f8fafc; border-radius: 20px; padding: 12px; }
         .queue-item {
-            background: white;
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            border-left: 3px solid #e74c3c;
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
+            background: white; padding: 10px 14px; margin-bottom: 10px; border-radius: 16px;
+            border-left: 4px solid #f97316; display: flex; justify-content: space-between; align-items: center;
         }
-
-        .footer {
-            background: #2c3e50;
-            color: white;
-            padding: 15px 25px;
-            text-align: center;
-            font-size: 12px;
-        }
-
+        .footer { background: #0f172a; color: #cbd5e1; padding: 16px; text-align: center; font-size: 12px; }
         .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            justify-content: center; align-items: center; z-index: 2000;
         }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 400px;
-            text-align: center;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #e74c3c;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
+        .modal-content { background: white; padding: 32px; border-radius: 32px; max-width: 400px; text-align: center; }
+        .spinner { border: 4px solid #f1f5f9; border-top: 4px solid #ef4444; border-radius: 50%; width: 48px; height: 48px; animation: spin 0.8s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #2ecc71;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            z-index: 2000;
-            animation: slideIn 0.3s ease;
+            position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: white;
+            padding: 14px 24px; border-radius: 40px; font-weight: 500; z-index: 2100;
+            animation: slideIn 0.25s ease;
         }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white; padding: 0; margin: 0; }
-        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @media print { .no-print { display: none !important; } body { background: white; padding: 0; } }
+        .badge-icon { background: #f1f5f9; padding: 4px 12px; border-radius: 30px; font-size: 11px; }
+        progress { width: 100%; height: 6px; border-radius: 10px; margin-top: 6px; }
     </style>
 </head>
 <body>
 
 <div class="printer-app">
     <div class="header">
-        <h1><span>🖨️</span> SISTEM CETAK PRINTER KERTAS</h1>
-        <p>Proyek Printer - Solusi Cetak Dokumen, Kode, Struk, dan Laporan ke Printer Fisik</p>
-        <div class="printer-status">✅ Sistem siap | Pilih printer di dialog cetak</div>
+        <h1><span>🖨️</span> PrinterMaster Pro — Upload File & Cetak Fisik</h1>
+        <p>Upload PDF, Gambar (OCR otomatis), File teks • Cetak langsung ke printer</p>
+        <div class="printer-status">🟢 Live | Support PDF/Image/TXT | Klik cetak → pilih printer</div>
     </div>
 
     <div class="toolbar no-print">
-        <button class="btn btn-print" id="printNowBtn">🖨️ CETAK KE PRINTER SEKARANG</button>
-        <button class="btn btn-preview" id="previewBtn">👁️ PREVIEW CETAKAN</button>
-        <button class="btn btn-success" id="addToQueueBtn">📥 TAMBAH KE ANTRIAN</button>
-        <button class="btn btn-warning" id="printQueueBtn">📋 CETAK ANTRIAN</button>
-        <button class="btn btn-dark" id="clearQueueBtn">🗑️ HAPUS ANTRIAN</button>
-        <button class="btn btn-dark" id="newDocBtn">📄 DOKUMEN BARU</button>
-        <button class="btn btn-dark" id="sampleBtn">📝 CONTOH DOKUMEN</button>
+        <button class="btn btn-print" id="printNowBtn">🖨️ CETAK LANGSUNG</button>
+        <button class="btn btn-preview" id="previewBtn">🔍 PREVIEW HALAMAN</button>
+        <button class="btn btn-success" id="addToQueueBtn">📥 + ANTRIAN</button>
+        <button class="btn btn-warning" id="printQueueBtn">📑 CETAK ANTRIAN</button>
+        <button class="btn btn-dark" id="clearQueueBtn">🗑️ KOSONGKAN ANTRIAN</button>
+        <button class="btn btn-dark" id="newDocBtn">✨ DOKUMEN BARU</button>
+        <button class="btn btn-dark" id="sampleBtn">📄 CONTOH LAPORAN</button>
+    </div>
+
+    <!-- AREA UPLOAD FILE (FITUR BARU) -->
+    <div class="upload-area no-print">
+        <label class="file-input-label" for="fileUpload">📂 UPLOAD FILE</label>
+        <input type="file" id="fileUpload" accept=".txt,.pdf,.jpg,.jpeg,.png,.bmp" style="display:none">
+        <span class="upload-info" id="uploadStatus">📎 Upload PDF/Gambar/Teks → teks akan diekstrak otomatis</span>
+        <div id="uploadProgressArea" style="flex:1; max-width:200px;"></div>
     </div>
 
     <div class="settings-panel no-print">
-        <div class="setting-group">
-            <label>📄 Ukuran Kertas:</label>
-            <select id="paperSize">
-                <option value="A4">A4 (210 x 297 mm)</option>
-                <option value="Letter">Letter (216 x 279 mm)</option>
-                <option value="Legal">Legal (216 x 356 mm)</option>
-                <option value="Struk">Struk (80mm x 297mm)</option>
-            </select>
-        </div>
-        <div class="setting-group">
-            <label>📐 Orientasi:</label>
-            <select id="orientation">
-                <option value="portrait">Portrait (Berdiri)</option>
-                <option value="landscape">Landscape (Tidur)</option>
-            </select>
-        </div>
-        <div class="setting-group">
-            <label>📏 Margin (mm):</label>
-            <input type="number" id="margin" value="15" min="0" max="50" step="5" style="width: 70px;">
-        </div>
-        <div class="setting-group">
-            <label>🔤 Ukuran Font:</label>
-            <select id="fontSize">
-                <option value="9">9pt</option>
-                <option value="10">10pt</option>
-                <option value="11" selected>11pt</option>
-                <option value="12">12pt</option>
-                <option value="14">14pt</option>
-            </select>
-        </div>
+        <div class="setting-group"><label>📄 Ukuran</label><select id="paperSize"><option value="A4">A4</option><option value="Letter">Letter</option><option value="Legal">Legal</option><option value="Struk">Struk 80mm</option></select></div>
+        <div class="setting-group"><label>🔄 Orientasi</label><select id="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
+        <div class="setting-group"><label>📏 Margin (mm)</label><input type="number" id="margin" value="12" min="0" max="40" step="2" style="width:70px"></div>
+        <div class="setting-group"><label>🔤 Font size</label><select id="fontSize"><option value="9">9pt</option><option value="10">10pt</option><option value="11" selected>11pt</option><option value="12">12pt</option><option value="14">14pt</option></select></div>
+        <div class="setting-group"><label>📄 Kop surat</label><select id="letterhead"><option value="default">Standar</option><option value="corporate">Corporate</option><option value="minimal">Minimalis</option></select></div>
     </div>
 
     <div class="main-content">
         <div class="editor-panel">
-            <div class="panel-header">
-                <span>✏️ EDITOR DOKUMEN</span>
-                <span style="font-size: 12px; color: #7f8c8d;">Teks, kode, atau laporan</span>
-            </div>
-            <textarea id="documentEditor" placeholder="Tulis dokumen yang akan dicetak di sini..."></textarea>
+            <div class="panel-header"><span>✍️ EDITOR DOKUMEN (teks cetak)</span><span class="badge-icon">Upload otomatis isi</span></div>
+            <textarea id="documentEditor" placeholder="Tulis atau upload file (PDF/Gambar/Teks) akan otomatis di ekstrak di sini..."></textarea>
         </div>
-
         <div class="preview-panel">
-            <div class="panel-header">
-                <span>📄 PREVIEW CETAKAN</span>
-                <span style="font-size: 12px; color: #7f8c8d;">Hasil yang akan tercetak</span>
-            </div>
-            <div class="preview-area">
-                <div id="livePreview" class="print-content">
-                    <code>// Preview akan tampil di sini</code>
-                </div>
-            </div>
+            <div class="panel-header"><span>📄 LIVE PREVIEW CETAKAN FISIK</span><span class="badge-icon">WYSIWYG</span></div>
+            <div class="preview-area"><div id="livePreview" class="print-content"><code>✨ Preview akan tampil otomatis</code></div></div>
         </div>
     </div>
 
     <div class="queue-panel no-print">
-        <div class="queue-header">
-            <span>📋 ANTRIAN CETAK (<span id="queueCount">0</span> dokumen)</span>
-            <button id="clearQueueBtn2" style="padding: 4px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">Hapus Semua</button>
-        </div>
-        <div class="queue-list" id="queueList">
-            <div style="text-align: center; color: #95a5a6; padding: 20px;">Belum ada antrian</div>
-        </div>
+        <div class="queue-header"><span>📋 ANTRIAN CETAK (<span id="queueCount">0</span> dokumen)</span><button id="clearQueueBtn2" style="background:#ef4444; border:none; padding:6px 16px; border-radius:40px; color:white; font-weight:600; cursor:pointer;">Hapus semua</button></div>
+        <div class="queue-list" id="queueList"><div style="text-align:center; padding:20px; color:#64748b;">📭 Antrian kosong</div></div>
     </div>
-
-    <div class="footer no-print">
-        <p>⚡ Sistem siap mencetak ke printer fisik | Klik "CETAK KE PRINTER SEKARANG" → Pilih printer → Atur jumlah kopi → Print</p>
-        <p style="margin-top: 5px; font-size: 11px;">💡 Jika popup diblokir, izinkan popup untuk situs ini atau gunakan tombol Preview lalu Ctrl+P</p>
-    </div>
+    <div class="footer no-print"><p>⚡ CETAK LANGSUNG → pilih printer fisik → hasil nyata! Upload file: PDF/Gambar (OCR otomatis) / Teks</p></div>
 </div>
 
-<div id="printModal" class="modal">
-    <div class="modal-content">
-        <h3>🖨️ Mempersiapkan cetakan...</h3>
-        <div class="spinner"></div>
-        <p>Dialog printer akan terbuka sebentar lagi</p>
-        <p style="font-size: 12px; margin-top: 10px;">Jika tidak muncul, cek popup blocker</p>
-    </div>
-</div>
+<div id="printModal" class="modal"><div class="modal-content"><h3>🖨️ Menyiapkan cetakan ...</h3><div class="spinner"></div><p>Membuka dialog printer</p><p style="font-size:12px;">Pastikan popup tidak diblokir</p></div></div>
 
 <script>
+    // ======================= GLOBAL =======================
     let printQueue = [];
     let printJobId = 0;
 
@@ -392,18 +271,24 @@
     const clearQueueBtn2 = document.getElementById('clearQueueBtn2');
     const newDocBtn = document.getElementById('newDocBtn');
     const sampleBtn = document.getElementById('sampleBtn');
-    const queueList = document.getElementById('queueList');
+    const queueListEl = document.getElementById('queueList');
     const queueCountSpan = document.getElementById('queueCount');
     const paperSize = document.getElementById('paperSize');
     const orientation = document.getElementById('orientation');
-    const margin = document.getElementById('margin');
-    const fontSize = document.getElementById('fontSize');
+    const marginInput = document.getElementById('margin');
+    const fontSizeSelect = document.getElementById('fontSize');
+    const letterhead = document.getElementById('letterhead');
     const printModal = document.getElementById('printModal');
+    const fileUploadInput = document.getElementById('fileUpload');
+    const uploadStatusSpan = document.getElementById('uploadStatus');
+    const uploadProgressArea = document.getElementById('uploadProgressArea');
 
+    // Helper notifikasi
     function showNotification(msg, isError = false) {
         let notif = document.createElement('div');
         notif.className = 'notification';
-        notif.style.background = isError ? '#e74c3c' : '#2ecc71';
+        notif.style.background = isError ? '#dc2626' : '#0f172a';
+        notif.style.borderLeft = isError ? '4px solid #facc15' : '4px solid #10b981';
         notif.innerHTML = msg;
         document.body.appendChild(notif);
         setTimeout(() => notif.remove(), 3000);
@@ -411,7 +296,7 @@
 
     function escapeHtml(str) {
         if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
+        return str.replace(/[&<>]/g, (m) => {
             if (m === '&') return '&amp;';
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
@@ -421,325 +306,256 @@
 
     function updatePreview() {
         let content = editor.value;
-        if (content.trim() === "") {
-            previewDiv.innerHTML = "<code>// Kosong - tulis dokumen di editor kiri</code>";
+        if (!content.trim()) {
+            previewDiv.innerHTML = '<code style="color:#94a3b8;">╭─ Kosong ─╮<br>│ Upload file atau tulis manual │<br>╰──────────╯</code>';
             return;
         }
-        let escapedContent = escapeHtml(content);
-        let fontSizeVal = fontSize.value;
-        previewDiv.innerHTML = `<pre style="font-family: 'Courier New', monospace; font-size: ${fontSizeVal}pt; margin: 0; white-space: pre-wrap;">${escapedContent}</pre>`;
+        let fontSz = fontSizeSelect.value;
+        previewDiv.innerHTML = `<pre style="font-family: 'Courier New', monospace; font-size: ${fontSz}pt; margin:0; white-space:pre-wrap;">${escapeHtml(content)}</pre>`;
     }
 
-    function generatePrintHTML(content, title = "Dokumen Cetak") {
-        let currentDateTime = new Date().toLocaleString('id-ID');
-        let escapedContent = escapeHtml(content);
-        let marginVal = margin.value + "mm";
-        let fontSizeVal = fontSize.value + "pt";
-        let orientationVal = orientation.value;
-        let paperSizeVal = paperSize.value;
-        
+    // generate HTML untuk print (sama dengan sebelumnya)
+    function generatePrintHTML(content, title = "Cetak Dokumen") {
+        const now = new Date().toLocaleString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+        const marginVal = marginInput.value + "mm";
+        const fontSizeVal = fontSizeSelect.value + "pt";
+        const orientationVal = orientation.value;
+        const paperSizeVal = paperSize.value;
+        const headerStyle = letterhead.value === 'corporate' ? 'border-bottom: 3px solid #f97316; background:#fef9e8;' : (letterhead.value === 'minimal' ? 'border-bottom:1px solid #ccc;' : 'border-bottom:2px solid #334155;');
         let sizeCSS = "";
         if (paperSizeVal === "A4") sizeCSS = "size: A4;";
         else if (paperSizeVal === "Letter") sizeCSS = "size: Letter;";
         else if (paperSizeVal === "Legal") sizeCSS = "size: Legal;";
         else if (paperSizeVal === "Struk") sizeCSS = "size: 80mm 297mm;";
-        
-        return `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>${title} - Cetak Printer</title>
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body {
-                        font-family: 'Courier New', 'Consolas', monospace;
-                        margin: ${marginVal};
-                        padding: 0;
-                        background: white;
-                        font-size: ${fontSizeVal};
-                        line-height: 1.5;
-                    }
-                    @page {
-                        ${sizeCSS}
-                        margin: ${marginVal};
-                    }
-                    .print-header {
-                        text-align: center;
-                        margin-bottom: 20px;
-                        padding-bottom: 10px;
-                        border-bottom: 2px solid #000;
-                        font-family: Arial, sans-serif;
-                    }
-                    .print-header h2 { font-size: 18pt; margin-bottom: 5px; }
-                    .print-header .date { font-size: 10pt; color: #555; }
-                    .content {
-                        white-space: pre-wrap;
-                        word-wrap: break-word;
-                        font-family: 'Courier New', monospace;
-                        font-size: ${fontSizeVal};
-                        line-height: 1.5;
-                    }
-                    .print-footer {
-                        text-align: center;
-                        margin-top: 30px;
-                        padding-top: 10px;
-                        border-top: 1px solid #ccc;
-                        font-size: 9pt;
-                        color: #777;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="print-header">
-                    <h2>${escapeHtml(title)}</h2>
-                    <div class="date">Dicetak: ${currentDateTime} | ${paperSizeVal} | ${orientationVal === 'portrait' ? 'Portrait' : 'Landscape'}</div>
-                </div>
-                <div class="content">
-                    <pre style="font-family: 'Courier New', monospace; margin: 0; white-space: pre-wrap;">${escapedContent}</pre>
-                </div>
-                <div class="print-footer">
-                    Dicetak dari Sistem Cetak Printer Kertas
-                </div>
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                            setTimeout(function() { window.close(); }, 1000);
-                        }, 500);
-                    };
-                <\/script>
-            </body>
-            </html>
-        `;
+        const orientationCSS = orientationVal === 'landscape' ? '@page { size: landscape; }' : '';
+        return `<!DOCTYPE html>
+        <html><head><meta charset="UTF-8"><title>${escapeHtml(title)} - Printer Pro</title>
+        <style>
+            * { margin:0; padding:0; box-sizing:border-box; }
+            body { font-family: 'Courier New', monospace; margin: ${marginVal}; background: white; font-size: ${fontSizeVal}; line-height: 1.45; }
+            @page { ${sizeCSS} margin: ${marginVal}; } ${orientationCSS}
+            .print-header { text-align: center; margin-bottom: 22px; padding-bottom: 12px; ${headerStyle} font-family: system-ui; }
+            .print-header h2 { font-size: 20pt; }
+            .print-header .date { font-size: 9pt; color: #475569; }
+            .content pre { font-family: 'Courier New', monospace; font-size: ${fontSizeVal}; white-space: pre-wrap; margin:0; }
+            .print-footer { margin-top: 32px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align: center; font-size: 8pt; }
+        </style>
+        </head>
+        <body>
+            <div class="print-header"><h2>${escapeHtml(title)}</h2><div class="date">📅 ${now} | ${paperSizeVal} | ${orientationVal}</div></div>
+            <div class="content"><pre>${escapeHtml(content)}</pre></div>
+            <div class="print-footer">🖨️ Dicetak via PrinterMaster Pro • Upload & Cetak</div>
+            <script>window.onload = () => { setTimeout(() => { window.print(); setTimeout(() => window.close(), 1200); }, 400); };<\/script>
+        </body></html>`;
     }
 
-    function printDirectly() {
+    // CETAK LANGSUNG
+    function printDirectlyToPrinter() {
         let content = editor.value;
-        if (content.trim() === "") {
-            showNotification("⚠️ Tidak ada dokumen untuk dicetak!", true);
-            return false;
-        }
-        
+        if (!content.trim()) { showNotification("⚠️ Tidak ada konten untuk dicetak!", true); return; }
         showModal(true);
-        
         setTimeout(() => {
-            let title = "Dokumen Cetak " + new Date().toLocaleTimeString();
+            let title = "Cetak " + new Date().toLocaleTimeString('id-ID');
             let printHTML = generatePrintHTML(content, title);
-            
             try {
-                const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,scrollbars=yes,menubar=yes');
-                if (!printWindow || printWindow.closed || typeof printWindow.closed === 'undefined') {
-                    showNotification("⚠️ Popup diblokir! Izinkan popup atau gunakan Preview + Ctrl+P", true);
-                    showModal(false);
-                    return;
-                }
-                
-                printWindow.document.write(printHTML);
-                printWindow.document.close();
-                printWindow.focus();
+                const printWin = window.open('', '_blank', 'width=950,height=800,toolbar=yes,scrollbars=yes');
+                if (!printWin) { showNotification("Popup diblokir!", true); showModal(false); return; }
+                printWin.document.write(printHTML);
+                printWin.document.close();
+                printWin.focus();
                 showModal(false);
-                showNotification("✅ Dialog cetak akan terbuka...");
-            } catch(e) {
-                showNotification("❌ Gagal membuka jendela cetak: " + e.message, true);
-                showModal(false);
-            }
+                showNotification("🖨️ Dialog printer terbuka, pilih printer fisik.");
+            } catch(e) { showNotification("Error: "+e.message, true); showModal(false); }
         }, 200);
-        
-        return true;
     }
 
-    function previewPrint() {
+    function previewOnly() {
         let content = editor.value;
-        if (content.trim() === "") {
-            showNotification("⚠️ Tidak ada dokumen untuk preview!", true);
-            return;
-        }
-        
-        let title = "PREVIEW - " + new Date().toLocaleTimeString();
-        let printHTML = generatePrintHTML(content, title);
-        let modifiedHTML = printHTML.replace(/setTimeout\(function\(\) \{ window.print\(\);/, '// Preview mode');
-        modifiedHTML = modifiedHTML.replace(/setTimeout\(function\(\) \{ window.close\(\);/, '//');
-        
-        const previewWindow = window.open('', '_blank', 'width=900,height=700');
-        if (!previewWindow) {
-            showNotification("⚠️ Popup diblokir! Izinkan popup untuk preview", true);
-            return;
-        }
-        
-        previewWindow.document.write(modifiedHTML);
-        previewWindow.document.close();
-        
+        if (!content.trim()) { showNotification("Kosong, tidak bisa preview", true); return; }
+        let printHTML = generatePrintHTML(content, "PREVIEW - "+new Date().toLocaleString());
+        let safeHTML = printHTML.replace(/setTimeout\(\(\) => \{ window.print\(\);/, '//');
+        const pWin = window.open('', '_blank', 'width=1000,height=800');
+        if (!pWin) { showNotification("Popup diblokir!", true); return; }
+        pWin.document.write(safeHTML);
+        pWin.document.close();
         setTimeout(() => {
-            if (previewWindow.document.body) {
-                let info = previewWindow.document.createElement('div');
-                info.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#e74c3c; color:white; padding:10px 20px; border-radius:8px; font-family:sans-serif; z-index:9999; cursor:pointer;';
-                info.innerHTML = '🖨️ Tekan Ctrl+P untuk mencetak ke printer';
-                info.onclick = () => previewWindow.print();
-                previewWindow.document.body.appendChild(info);
+            if(pWin.document.body){
+                let btn = pWin.document.createElement('div');
+                btn.innerText = '🖨️ Cetak ke Printer (Ctrl+P)';
+                btn.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#f97316; color:white; padding:10px 20px; border-radius:40px; cursor:pointer; z-index:9999;';
+                btn.onclick = () => pWin.print();
+                pWin.document.body.appendChild(btn);
             }
-        }, 500);
+        },500);
     }
 
-    function addToQueue() {
+    // ======================= FITUR UPLOAD FILE (PDF, GAMBAR, TXT) =======================
+    async function handleFileUpload(file) {
+        if (!file) return;
+        const fileName = file.name;
+        const fileType = file.type;
+        uploadStatusSpan.innerText = `📄 Memproses ${fileName} ...`;
+        let extractedText = "";
+
+        // Progress indicator
+        let progDiv = document.createElement('div');
+        progDiv.innerHTML = `<progress value="0" max="100" style="width:100%"></progress><span style="font-size:10px">Loading...</span>`;
+        uploadProgressArea.innerHTML = '';
+        uploadProgressArea.appendChild(progDiv);
+        const progressBar = progDiv.querySelector('progress');
+
+        try {
+            // 1. TEXT FILE
+            if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
+                extractedText = await file.text();
+                showNotification("✅ File teks berhasil diupload", false);
+            }
+            // 2. PDF FILE using pdf.js
+            else if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = "";
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += `\n--- Halaman ${i} ---\n${pageText}\n`;
+                    progressBar.value = (i / pdf.numPages) * 100;
+                }
+                extractedText = fullText || "[Tidak ada teks yang bisa diekstrak dari PDF]";
+                showNotification(`📄 PDF berhasil diekstrak: ${pdf.numPages} halaman`, false);
+            }
+            // 3. GAMBAR (OCR dengan Tesseract.js)
+            else if (fileType.startsWith('image/')) {
+                uploadStatusSpan.innerText = `🖼️ OCR gambar: ${fileName} ... (membutuhkan beberapa detik)`;
+                const imgUrl = URL.createObjectURL(file);
+                const img = new Image();
+                await new Promise((resolve) => { img.onload = resolve; img.src = imgUrl; });
+                progressBar.value = 30;
+                const worker = await Tesseract.createWorker('ind');
+                await worker.loadLanguage('eng+ind');
+                await worker.initialize('eng+ind');
+                const { data: { text } } = await worker.recognize(img);
+                await worker.terminate();
+                extractedText = text.trim() || "[OCR tidak mendeteksi teks pada gambar]";
+                URL.revokeObjectURL(imgUrl);
+                progressBar.value = 100;
+                showNotification("✅ OCR selesai! Teks dari gambar ditambahkan.", false);
+            }
+            else {
+                throw new Error("Format file tidak didukung. Gunakan PDF, JPG/PNG, atau TXT.");
+            }
+
+            if (extractedText) {
+                // Append ke editor (bisa ditimpa? lebih baik mengganti / menambah)
+                let current = editor.value;
+                let newContent = current ? current + "\n\n========== UPLOAD: " + fileName + " ==========\n" + extractedText + "\n\n" : extractedText;
+                editor.value = newContent;
+                updatePreview();
+                uploadStatusSpan.innerHTML = `✅ Berhasil: ${fileName} → teks ditambahkan ke editor`;
+            } else {
+                uploadStatusSpan.innerHTML = `⚠️ Gagal ekstrak teks dari ${fileName}`;
+            }
+        } catch (err) {
+            console.error(err);
+            uploadStatusSpan.innerHTML = `❌ Error: ${err.message}`;
+            showNotification(`Gagal memproses file: ${err.message}`, true);
+        } finally {
+            uploadProgressArea.innerHTML = '';
+            setTimeout(() => {
+                if(uploadStatusSpan.innerText.includes("Berhasil")) uploadStatusSpan.innerText = "📎 Upload PDF/Gambar/Teks → ekstrak otomatis";
+                else if(!uploadStatusSpan.innerText.includes("Gagal")) uploadStatusSpan.innerText = "📎 Siap upload file lagi";
+            }, 3000);
+        }
+    }
+
+    fileUploadInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleFileUpload(e.target.files[0]);
+        fileUploadInput.value = ''; // reset
+    });
+
+    // ANTRIAN & queue logic
+    function addCurrentToQueue() {
         let content = editor.value;
-        if (content.trim() === "") {
-            showNotification("⚠️ Tidak ada dokumen untuk ditambahkan!", true);
-            return;
-        }
-        
+        if (!content.trim()) { showNotification("Tidak bisa tambah antrian kosong", true); return; }
         printJobId++;
-        let newJob = {
-            id: printJobId,
-            content: content,
-            title: "Dokumen " + printJobId,
-            timestamp: new Date().toLocaleString()
-        };
-        
-        printQueue.push(newJob);
-        updateQueueDisplay();
-        showNotification(`✅ Dokumen ditambahkan ke antrian! Total: ${printQueue.length}`);
+        printQueue.push({ id: printJobId, content: content, title: `Dokumen #${printJobId}`, time: new Date().toLocaleString() });
+        updateQueueUI();
+        showNotification(`📥 Ditambahkan ke antrian (total ${printQueue.length})`);
     }
-
-    function printAllQueue() {
-        if (printQueue.length === 0) {
-            showNotification("⚠️ Antrian kosong!", true);
-            return;
-        }
-        
+    function printAllQueueJobs() {
+        if (printQueue.length === 0) { showNotification("Antrian kosong", true); return; }
         if (confirm(`Cetak ${printQueue.length} dokumen ke printer?`)) {
-            let currentIndex = 0;
-            
+            let idx = 0;
             function printNext() {
-                if (currentIndex >= printQueue.length) {
-                    showNotification("✅ Semua dokumen selesai dicetak!");
-                    return;
-                }
-                
-                let job = printQueue[currentIndex];
-                let printHTML = generatePrintHTML(job.content, `${job.title} (${currentIndex+1}/${printQueue.length})`);
-                
-                const printWindow = window.open('', '_blank');
-                if (printWindow) {
-                    printWindow.document.write(printHTML);
-                    printWindow.document.close();
-                    printWindow.focus();
-                    setTimeout(() => {
-                        printWindow.close();
-                        currentIndex++;
-                        printNext();
-                    }, 2000);
-                } else {
-                    showNotification("Popup diblokir! Cetak antrian terhenti.", true);
-                }
+                if (idx >= printQueue.length) { showNotification("✅ Selesai cetak semua antrian"); return; }
+                let job = printQueue[idx];
+                let html = generatePrintHTML(job.content, `${job.title} (${idx+1}/${printQueue.length})`);
+                const win = window.open('', '_blank');
+                if (!win) { showNotification("Popup diblokir!", true); return; }
+                win.document.write(html);
+                win.document.close();
+                win.focus();
+                setTimeout(() => { win.close(); idx++; printNext(); }, 1800);
             }
-            
             printNext();
         }
     }
-
-    function clearQueue() {
-        if (printQueue.length === 0) return;
-        if (confirm(`Hapus ${printQueue.length} dokumen dari antrian?`)) {
-            printQueue = [];
-            updateQueueDisplay();
-            showNotification("✅ Antrian telah dikosongkan!");
-        }
-    }
-
-    function updateQueueDisplay() {
+    function clearQueue() { if(printQueue.length && confirm(`Hapus ${printQueue.length} dokumen?`)){ printQueue=[]; updateQueueUI(); showNotification("Antrian dikosongkan"); } }
+    function updateQueueUI() {
         queueCountSpan.innerText = printQueue.length;
-        
-        if (printQueue.length === 0) {
-            queueList.innerHTML = '<div style="text-align: center; color: #95a5a6; padding: 20px;">📭 Belum ada antrian</div>';
-            return;
-        }
-        
-        queueList.innerHTML = "";
-        printQueue.forEach((job) => {
-            let div = document.createElement('div');
-            div.className = 'queue-item';
-            let previewText = job.content.substring(0, 50) + (job.content.length > 50 ? '...' : '');
-            div.innerHTML = `
-                <div>
-                    <strong>#${job.id}</strong> - ${escapeHtml(previewText)}
-                    <div style="font-size: 10px; color: #7f8c8d;">${job.timestamp}</div>
-                </div>
-                <button onclick="removeFromQueue(${job.id})" style="background:#e74c3c; color:white; border:none; padding:4px 12px; border-radius:5px; cursor:pointer;">Hapus</button>
-            `;
-            queueList.appendChild(div);
+        if(!printQueue.length){ queueListEl.innerHTML = '<div style="text-align:center; padding:20px;">📭 Antrian kosong</div>'; return; }
+        queueListEl.innerHTML = '';
+        printQueue.forEach(job => {
+            const div = document.createElement('div'); div.className = 'queue-item';
+            const short = job.content.substring(0,55)+(job.content.length>55?'…':'');
+            div.innerHTML = `<div><strong>#${job.id}</strong> ${escapeHtml(short)}<div style="font-size:10px;">${job.time}</div></div>
+            <button onclick="window.removeFromQueueById(${job.id})" style="background:#ef4444; border:none; border-radius:30px; padding:5px 14px; color:white; cursor:pointer;">Hapus</button>`;
+            queueListEl.appendChild(div);
         });
     }
-
-    window.removeFromQueue = function(id) {
-        printQueue = printQueue.filter(job => job.id !== id);
-        updateQueueDisplay();
-        showNotification("✅ Dokumen dihapus dari antrian");
-    };
-
-    function newDocument() {
-        if (editor.value.trim() !== "" && confirm("Buat dokumen baru? Data saat ini akan hilang.")) {
-            editor.value = "";
-            updatePreview();
-        } else if (editor.value.trim() === "") {
-            editor.value = "";
-            updatePreview();
-        }
-    }
-
-    function insertSample() {
-        let sample = `================================
-   LAPORAN PROYEK PRINTER
-================================
-
+    window.removeFromQueueById = (id) => { printQueue = printQueue.filter(j=>j.id !== id); updateQueueUI(); showNotification("Dihapus dari antrian"); };
+    function newDocumentClear() { if(editor.value.trim() && confirm("Buat dokumen baru?")){ editor.value=""; updatePreview(); showNotification("Dokumen baru"); } else if(!editor.value.trim()){ editor.value=""; updatePreview(); } }
+    function insertSampleReport() {
+        let sample = `=================================================
+📊 LAPORAN PROYEK PRINTER PRO + UPLOAD FILE 📊
 Tanggal: ${new Date().toLocaleDateString('id-ID')}
-Operator: Admin Printer Station
+Operator: Sistem Cetak
 
---- DETAIL CETAKAN ---
-Jenis Dokumen: Laporan Bulanan
-Status: Berhasil
+✨ FITUR UNGGULAN: Upload PDF / Gambar (OCR) / Teks → otomatis diekstrak!
+🔥 Cetak langsung ke printer fisik dengan berbagai ukuran kertas.
 
---- DATA CETAK ---
-1. Dokumen Teknis: 2 eksemplar
-2. Kode Program: 1 eksemplar  
-3. Struk Transaksi: 5 eksemplar
-
---- KESIMPULAN ---
-Sistem printer berjalan dengan baik.
-Semua dokumen tercetak dengan rapi.
-
-Terima kasih telah menggunakan
-Sistem Cetak Printer Kertas!
-================================`;
-        
+=================================================
+DAFTAR DOKUMEN CETAK:
+- Laporan penjualan
+- Kode program
+- Struk transaksi
+=================================================
+Sistem siap mencetak hasil upload Anda!`;
         editor.value = sample;
         updatePreview();
-        showNotification("✅ Contoh dokumen telah ditambahkan!");
+        showNotification("✅ Contoh dengan informasi upload disisipkan");
     }
+    function showModal(show) { printModal.style.display = show ? 'flex' : 'none'; }
 
-    function showModal(show) {
-        printModal.style.display = show ? 'flex' : 'none';
-    }
-
+    // Event binding
     editor.addEventListener('input', updatePreview);
-    printNowBtn.addEventListener('click', printDirectly);
-    previewBtn.addEventListener('click', previewPrint);
-    addToQueueBtn.addEventListener('click', addToQueue);
-    printQueueBtn.addEventListener('click', printAllQueue);
+    printNowBtn.addEventListener('click', printDirectlyToPrinter);
+    previewBtn.addEventListener('click', previewOnly);
+    addToQueueBtn.addEventListener('click', addCurrentToQueue);
+    printQueueBtn.addEventListener('click', printAllQueueJobs);
     clearQueueBtn.addEventListener('click', clearQueue);
     clearQueueBtn2.addEventListener('click', clearQueue);
-    newDocBtn.addEventListener('click', newDocument);
-    sampleBtn.addEventListener('click', insertSample);
-    
+    newDocBtn.addEventListener('click', newDocumentClear);
+    sampleBtn.addEventListener('click', insertSampleReport);
     paperSize.addEventListener('change', updatePreview);
     orientation.addEventListener('change', updatePreview);
-    margin.addEventListener('input', updatePreview);
-    fontSize.addEventListener('change', updatePreview);
-    
+    marginInput.addEventListener('input', updatePreview);
+    fontSizeSelect.addEventListener('change', updatePreview);
+    letterhead.addEventListener('change', updatePreview);
+
     updatePreview();
-    
-    console.log("✅ Sistem Cetak Printer Kertas siap digunakan!");
-    showNotification("✅ Sistem siap! Mulai mengetik dokumen untuk dicetak.");
+    showNotification("🖨️ PrinterMaster Pro + UPLOAD FILE | Upload PDF/Gambar/Teks untuk ekstrak & cetak");
 </script>
 </body>
 </html>
